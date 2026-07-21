@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
   DollarSign,
   Users,
@@ -7,6 +8,7 @@ import {
   TrendingUp,
   Trophy,
   Clock,
+  Share2,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -50,6 +52,8 @@ function StatCard({ icon: Icon, label, value, tone = 'brand', hint }) {
 
 export default function Dashboard() {
   const currency = useAuthStore((s) => s.user?.tenant?.currency) || 'PEN';
+  const role = useAuthStore((s) => s.user?.role);
+  const canShare = role === 'ADMIN' || role === 'RECEPTIONIST';
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => dashboardApi.summary().then((r) => r.data),
@@ -69,6 +73,28 @@ export default function Dashboard() {
         title="Dashboard"
         subtitle="Resumen general de tu barbería"
       />
+
+      {canShare && (
+        <Link
+          to="/reservas-online"
+          className="mb-6 flex items-center justify-between gap-4 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-800 p-5 text-white transition hover:shadow-lg"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
+              <Share2 className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="font-semibold">Comparte tu enlace de reservas</p>
+              <p className="text-sm text-brand-100">
+                Deja que tus clientes reserven solos: enlace, QR y WhatsApp.
+              </p>
+            </div>
+          </div>
+          <span className="hidden shrink-0 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium sm:block">
+            Abrir →
+          </span>
+        </Link>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

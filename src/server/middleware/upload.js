@@ -1,12 +1,9 @@
 import multer from 'multer';
 import path from 'node:path';
-import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { env } from '../config/env.js';
+import { uploadRoot } from '../config/paths.js';
 import { ApiError } from '../utils/ApiError.js';
-
-const uploadRoot = path.resolve(process.cwd(), env.uploadDir);
-if (!fs.existsSync(uploadRoot)) fs.mkdirSync(uploadRoot, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadRoot),

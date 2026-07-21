@@ -9,6 +9,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 import { env } from './config/env.js';
+import { uploadRoot } from './config/paths.js';
 import { apiRouter } from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
@@ -56,7 +57,7 @@ export const createApp = () => {
   });
 
   // Archivos subidos (imágenes)
-  app.use('/uploads', express.static(path.resolve(ROOT, env.uploadDir)));
+  app.use('/uploads', express.static(uploadRoot));
 
   // Healthcheck
   app.get('/health', (_req, res) => res.json({ status: 'ok', ts: Date.now() }));

@@ -10,6 +10,8 @@
     "dev:server": "nodemon src/server/server.js",
     "dev:client": "vite",
     "build": "vite build",
+    "vercel-build": "prisma generate && vite build",
+    "postinstall": "prisma generate",
     "start": "cross-env NODE_ENV=production node src/server/server.js",
     "preview": "npm run build && npm start",
     "prisma:generate": "prisma generate",

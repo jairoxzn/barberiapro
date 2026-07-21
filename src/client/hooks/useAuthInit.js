@@ -10,7 +10,12 @@ let bootstrapPromise = null;
 
 const bootstrap = async () => {
   const { data } = await api.post('/auth/refresh');
-  const me = await api.get('/auth/me');
+  const token = data.data.accessToken;
+  // Importante: pasar el token recién obtenido explícitamente. Si esperáramos
+  // a que esté en el store, /auth/me saldría sin Authorization → 401 → login.
+  const me = await api.get('/auth/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return { ...data.data, user: { ...data.data.user, ...me.data.data } };
 };
 

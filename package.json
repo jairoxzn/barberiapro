@@ -1,0 +1,69 @@
+{
+  "name": "barberiapro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BarberíaPro — Sistema SaaS para barberías. Proyecto único: API (Express + Prisma) + interfaz (React + Tailwind).",
+  "type": "module",
+  "main": "src/server/server.js",
+  "scripts": {
+    "dev": "concurrently -n API,WEB -c blue,magenta \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "nodemon src/server/server.js",
+    "dev:client": "vite",
+    "build": "vite build",
+    "start": "cross-env NODE_ENV=production node src/server/server.js",
+    "preview": "npm run build && npm start",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "db:seed": "node prisma/seed.js",
+    "setup": "npm run prisma:generate && npm run prisma:migrate && npm run db:seed",
+    "test": "node --test src/server/**/*.test.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@tanstack/react-query": "^5.62.7",
+    "axios": "^1.7.9",
+    "bcryptjs": "^2.4.3",
+    "clsx": "^2.1.1",
+    "compression": "^1.7.5",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.469.0",
+    "morgan": "^1.10.0",
+    "multer": "^2.2.0",
+    "pdf-lib": "^1.17.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.2",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^7.1.1",
+    "recharts": "^2.15.0",
+    "zod": "^3.24.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "nodemon": "^3.1.9",
+    "postcss": "^8.4.49",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.0.5"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
+}

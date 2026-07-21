@@ -51,6 +51,7 @@ export default function Agenda() {
       appointmentApi
         .agenda({ from, to, branchId: branchId || undefined, barberId: barberId || undefined })
         .then((r) => r.data),
+    refetchInterval: 20_000, // muestra reservas nuevas (incl. online) sin recargar
   });
 
   const changeStatus = useMutation({

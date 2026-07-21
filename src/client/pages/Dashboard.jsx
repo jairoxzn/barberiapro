@@ -57,6 +57,7 @@ export default function Dashboard() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => dashboardApi.summary().then((r) => r.data),
+    refetchInterval: 20_000, // se actualiza solo cada 20s
   });
 
   if (isLoading) return <PageLoader />;

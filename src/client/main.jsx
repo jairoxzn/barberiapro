@@ -10,8 +10,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 30_000,
+      // Actualización automática sin recargar la página:
+      refetchOnWindowFocus: true, // al volver a la pestaña, refresca
+      refetchOnReconnect: true, // al recuperar internet, refresca
+      staleTime: 10_000,
     },
   },
 });

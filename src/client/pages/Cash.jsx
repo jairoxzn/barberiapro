@@ -169,6 +169,7 @@ export default function Cash() {
     queryKey: ['cash-current', branchId],
     queryFn: () => cashApi.current(branchId).then((r) => r.data),
     enabled: !!branchId,
+    refetchInterval: 20_000, // refleja ventas nuevas en caja sin recargar
   });
 
   if (!branchId) {

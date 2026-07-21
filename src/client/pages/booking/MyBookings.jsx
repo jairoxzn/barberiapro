@@ -17,6 +17,7 @@ export function MyBookings({ onBookNew }) {
   const { data = [], isLoading } = useQuery({
     queryKey: ['my-appointments'],
     queryFn: () => bookingApi.myAppointments().then((r) => r.data),
+    refetchInterval: 30_000, // refleja cambios de estado de sus citas
   });
 
   const cancel = useMutation({

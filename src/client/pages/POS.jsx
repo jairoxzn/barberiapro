@@ -63,6 +63,7 @@ export default function POS() {
     queryFn: () =>
       productApi.list({ search: debounced || undefined, branchId, limit: 100 }),
     enabled: tab === 'products',
+    refetchInterval: 30_000, // mantiene el stock al día entre cajas
   });
   const { data: clients } = useQuery({
     queryKey: ['pos-clients'],

@@ -23,6 +23,7 @@ import { Input, Textarea, Select } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Badge } from '@/components/ui/Badge';
+import { ImagePicker } from '@/components/ui/ImagePicker';
 import { money, fDateTime } from '@/utils/format';
 
 function ProductForm({ open, onClose, editing, branchId }) {
@@ -30,11 +31,13 @@ function ProductForm({ open, onClose, editing, branchId }) {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm({
     values: editing
       ? { ...editing }
-      : { costPrice: 0, salePrice: 0, minStock: 5, initialStock: 0 },
+      : { costPrice: 0, salePrice: 0, minStock: 5, initialStock: 0, imageUrl: '' },
   });
 
   const mutation = useMutation({
@@ -96,6 +99,13 @@ function ProductForm({ open, onClose, editing, branchId }) {
         )}
         <Input label="Ubicación en almacén" {...register('location')} />
         <Textarea label="Descripción" containerClassName="sm:col-span-2" {...register('description')} />
+        <div className="sm:col-span-2">
+          <ImagePicker
+            label="Imagen del producto"
+            value={watch('imageUrl')}
+            onChange={(url) => setValue('imageUrl', url)}
+          />
+        </div>
       </form>
     </Modal>
   );
@@ -290,8 +300,12 @@ export default function Products() {
                   <tr key={p.id} className="border-b border-slate-50 transition hover:bg-slate-50 dark:border-slate-800/50 dark:hover:bg-slate-800/40">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800">
-                          <Package className="h-4 w-4" />
+                        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800">
+                          {p.imageUrl ? (
+                            <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <Package className="h-4 w-4" />
+                          )}
                         </div>
                         <div>
                           <p className="font-medium text-slate-800 dark:text-slate-100">{p.name}</p>

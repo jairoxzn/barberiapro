@@ -132,13 +132,20 @@ export function BookingWizard({ shop, onBooked }) {
                   key={s.id}
                   onClick={() => toggleService(s.id)}
                   className={cn(
-                    'flex items-center justify-between rounded-xl border p-3 text-left transition',
+                    'flex items-center gap-3 rounded-xl border p-3 text-left transition',
                     serviceIds.includes(s.id)
                       ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
                       : 'border-slate-200 hover:border-slate-300 dark:border-slate-700'
                   )}
                 >
-                  <div>
+                  {s.imageUrl && (
+                    <img
+                      src={s.imageUrl}
+                      alt={s.name}
+                      className="h-11 w-11 shrink-0 rounded-lg object-cover"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-800 dark:text-slate-100">{s.name}</p>
                     <p className="text-xs text-slate-400">{s.durationMinutes} min</p>
                   </div>

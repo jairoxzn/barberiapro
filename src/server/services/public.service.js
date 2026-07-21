@@ -29,6 +29,7 @@ export const publicService = {
           durationMinutes: true,
           price: true,
           color: true,
+          imageUrl: true,
           category: { select: { name: true } },
         },
       }),

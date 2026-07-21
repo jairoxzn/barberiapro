@@ -13,6 +13,7 @@ import { Input, Textarea, Select } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Badge } from '@/components/ui/Badge';
+import { ImagePicker } from '@/components/ui/ImagePicker';
 import { money } from '@/utils/format';
 
 function ServiceForm({ open, onClose, editing, categories }) {
@@ -20,11 +21,13 @@ function ServiceForm({ open, onClose, editing, categories }) {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm({
     values: editing
       ? { ...editing, categoryId: editing.categoryId || '' }
-      : { durationMinutes: 30, color: '#6366f1', categoryId: '' },
+      : { durationMinutes: 30, color: '#6366f1', categoryId: '', imageUrl: '' },
   });
 
   const mutation = useMutation({
@@ -91,6 +94,13 @@ function ServiceForm({ open, onClose, editing, categories }) {
           <input type="color" className="h-11 w-full cursor-pointer rounded-xl border border-slate-300 dark:border-slate-700" {...register('color')} />
         </div>
         <Textarea label="Descripción" containerClassName="sm:col-span-2" {...register('description')} />
+        <div className="sm:col-span-2">
+          <ImagePicker
+            label="Imagen del servicio"
+            value={watch('imageUrl')}
+            onChange={(url) => setValue('imageUrl', url)}
+          />
+        </div>
       </form>
     </Modal>
   );
@@ -193,7 +203,13 @@ export default function Services() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {services.map((s) => (
             <Card key={s.id} className="group overflow-hidden">
-              <div className="h-1.5" style={{ background: s.color }} />
+              {s.imageUrl ? (
+                <div className="h-28 w-full overflow-hidden">
+                  <img src={s.imageUrl} alt={s.name} className="h-full w-full object-cover" />
+                </div>
+              ) : (
+                <div className="h-1.5" style={{ background: s.color }} />
+              )}
               <CardBody>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">

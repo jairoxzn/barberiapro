@@ -217,13 +217,21 @@ export default function POS() {
                   )}
                 >
                   <div
-                    className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg"
+                    className="mb-2 flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg"
                     style={{
-                      background: tab === 'services' ? `${item.color}20` : '#6366f120',
+                      background: item.imageUrl
+                        ? undefined
+                        : tab === 'services' ? `${item.color}20` : '#6366f120',
                       color: tab === 'services' ? item.color : '#6366f1',
                     }}
                   >
-                    {tab === 'services' ? <Scissors className="h-4 w-4" /> : <Package className="h-4 w-4" />}
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                    ) : tab === 'services' ? (
+                      <Scissors className="h-4 w-4" />
+                    ) : (
+                      <Package className="h-4 w-4" />
+                    )}
                   </div>
                   <p className="line-clamp-2 text-sm font-medium text-slate-800 dark:text-slate-100">
                     {item.name}

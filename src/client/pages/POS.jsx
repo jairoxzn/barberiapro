@@ -11,10 +11,11 @@ import {
   ShoppingCart,
   X,
   Printer,
+  CheckCircle2,
   UserPlus,
 } from 'lucide-react';
 import { serviceApi, productApi, clientApi, saleApi } from '@/services';
-import { errMsg } from '@/lib/axios';
+import { api, errMsg } from '@/lib/axios';
 import { useAuthStore } from '@/store/authStore';
 import { useDebounced } from '@/hooks/useDebounced';
 import { PageHeader, EmptyState, Spinner } from '@/components/ui/Misc';
@@ -49,6 +50,8 @@ export default function POS() {
   const [discount, setDiscount] = useState(0);
   const [applyTax, setApplyTax] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
+  const [lastSale, setLastSale] = useState(null); // venta recién registrada (para imprimir)
+  const [printing, setPrinting] = useState(false);
 
   const { data: services } = useQuery({
     queryKey: ['pos-services', debounced],
@@ -143,13 +146,38 @@ export default function POS() {
       qc.invalidateQueries({ queryKey: ['products'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['cash'] });
-      setPayOpen(false);
+      // La venta ya está guardada; ahora se muestra el paso de impresión.
+      setLastSale(created);
       reset();
-      // Abrir el ticket en una pestaña nueva.
-      window.open(saleApi.ticketUrl(created.id), '_blank');
     },
     onError: (e) => toast.error(errMsg(e)),
   });
+
+  // Descarga el ticket PDF con el token (una pestaña nueva no envía el JWT).
+  // Se abre la pestaña de forma síncrona para evitar el bloqueo de pop-ups.
+  const printTicket = async (saleId) => {
+    const win = window.open('', '_blank');
+    setPrinting(true);
+    try {
+      const { data } = await api.get(`/sales/${saleId}/ticket`, {
+        responseType: 'blob',
+      });
+      const url = URL.createObjectURL(data);
+      if (win) win.location.href = url;
+      else window.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+      win?.close();
+      toast.error(errMsg(e));
+    } finally {
+      setPrinting(false);
+    }
+  };
+
+  const closePayment = () => {
+    setPayOpen(false);
+    setLastSale(null);
+  };
 
   if (!branchId) {
     return (
@@ -371,16 +399,19 @@ export default function POS() {
 
       <PaymentModal
         open={payOpen}
-        onClose={() => setPayOpen(false)}
+        done={lastSale}
+        onClose={closePayment}
         total={total}
         loading={sale.isPending}
+        printing={printing}
         onConfirm={(payments) => sale.mutate(payments)}
+        onPrint={() => lastSale && printTicket(lastSale.id)}
       />
     </div>
   );
 }
 
-function PaymentModal({ open, onClose, total, onConfirm, loading }) {
+function PaymentModal({ open, done, onClose, total, onConfirm, onPrint, loading, printing }) {
   const [method, setMethod] = useState('CASH');
   const [received, setReceived] = useState('');
 
@@ -392,6 +423,45 @@ function PaymentModal({ open, onClose, total, onConfirm, loading }) {
     onConfirm([{ method, amount: total }]);
   };
 
+  // ---- Fase 2: venta registrada → imprimir ----
+  if (done) {
+    return (
+      <Modal
+        open={open}
+        onClose={onClose}
+        title="Venta registrada"
+        footer={
+          <>
+            <Button variant="secondary" onClick={onClose}>Nueva venta</Button>
+            <Button onClick={onPrint} loading={printing}>
+              <Printer className="h-4 w-4" /> Imprimir ticket
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col items-center py-4 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10">
+            <CheckCircle2 className="h-9 w-9 text-emerald-500" />
+          </div>
+          <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+            ¡Venta {done.code} registrada!
+          </p>
+          <p className="mt-1 text-sm text-slate-500">Total cobrado</p>
+          <p className="text-3xl font-extrabold text-brand-600">{money(done.total)}</p>
+          {done.pointsEarned > 0 && (
+            <p className="mt-2 text-sm text-slate-500">
+              El cliente ganó <strong>{done.pointsEarned}</strong> puntos
+            </p>
+          )}
+          <p className="mt-4 text-xs text-slate-400">
+            El ticket se abrirá en una pestaña nueva para imprimir o guardar en PDF.
+          </p>
+        </div>
+      </Modal>
+    );
+  }
+
+  // ---- Fase 1: cobrar ----
   return (
     <Modal
       open={open}
@@ -401,7 +471,7 @@ function PaymentModal({ open, onClose, total, onConfirm, loading }) {
         <>
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
           <Button onClick={confirm} loading={loading}>
-            <Printer className="h-4 w-4" /> Confirmar e imprimir
+            Confirmar venta
           </Button>
         </>
       }

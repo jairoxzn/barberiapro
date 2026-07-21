@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Scissors } from 'lucide-react';
+import { Scissors, CalendarCheck } from 'lucide-react';
 import { authApi } from '@/services';
 import { api, errMsg } from '@/lib/axios';
 import { useAuthStore } from '@/store/authStore';
@@ -99,6 +99,20 @@ export default function Login() {
               Registra tu barbería
             </Link>
           </p>
+
+          {/* Acceso para clientes. En producción cada barbería comparte su
+              propio enlace /reservar/su-slug; aquí apuntamos a la demo. */}
+          <div className="mt-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+            <span className="text-xs text-slate-400">¿Eres cliente?</span>
+            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+          </div>
+          <Link
+            to="/reservar/barberia-demo"
+            className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-brand-200 bg-brand-50 py-2.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300"
+          >
+            <CalendarCheck className="h-4 w-4" /> Reservar una cita
+          </Link>
 
           <div className="mt-6 rounded-xl bg-slate-100 p-3 text-center text-xs text-slate-500 dark:bg-slate-800">
             Demo: <strong>admin@barberiapro.com</strong> / <strong>admin123</strong>

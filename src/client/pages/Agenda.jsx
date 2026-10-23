@@ -13,8 +13,12 @@ import {
   X,
   CheckCheck,
   UserX,
+  Ban,
+  Trash2,
+  Building2,
+  Globe,
 } from 'lucide-react';
-import { appointmentApi, barberApi, branchApi, serviceApi, clientApi } from '@/services';
+import { appointmentApi, barberApi, branchApi, scheduleApi } from '@/services';
 import { errMsg } from '@/lib/axios';
 import { useAuthStore } from '@/store/authStore';
 import { PageHeader, PageLoader, EmptyState, Avatar } from '@/components/ui/Misc';
@@ -23,6 +27,8 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Input';
 import { Badge, APPOINTMENT_STATUS } from '@/components/ui/Badge';
 import { BookingModal } from '@/components/BookingModal';
+import { BlockModal } from '@/components/BlockModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { money, fTime } from '@/utils/format';
 
 export default function Agenda() {
@@ -32,6 +38,8 @@ export default function Agenda() {
   const [branchId, setBranchId] = useState('');
   const [barberId, setBarberId] = useState('');
   const [booking, setBooking] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+  const [blockToDelete, setBlockToDelete] = useState(null);
 
   const from = startOfDay(date).toISOString();
   const to = endOfDay(date).toISOString();
@@ -45,13 +53,27 @@ export default function Agenda() {
     queryFn: () => barberApi.list({ limit: 100 }).then((r) => r.data),
   });
 
-  const { data: appts = [], isLoading } = useQuery({
+  const { data: appts = [], isLoading: loadingAppts } = useQuery({
     queryKey: ['agenda', from, branchId, barberId],
     queryFn: () =>
       appointmentApi
         .agenda({ from, to, branchId: branchId || undefined, barberId: barberId || undefined })
         .then((r) => r.data),
-    refetchInterval: 20_000, // muestra reservas nuevas (incl. online) sin recargar
+    refetchInterval: 20_000,
+  });
+
+  const { data: dayBlocks = [], isLoading: loadingBlocks } = useQuery({
+    queryKey: ['agenda-blocks', from, to, branchId, barberId],
+    queryFn: () =>
+      scheduleApi
+        .listBlocks({
+          from,
+          to,
+          branchId: branchId || undefined,
+          barberId: barberId || undefined,
+        })
+        .then((r) => r.data),
+    refetchInterval: 20_000,
   });
 
   const changeStatus = useMutation({
@@ -63,19 +85,41 @@ export default function Agenda() {
     onError: (e) => toast.error(errMsg(e)),
   });
 
+  const deleteBlockMutation = useMutation({
+    mutationFn: (id) => scheduleApi.deleteBlock(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['agenda-blocks'] });
+      qc.invalidateQueries({ queryKey: ['schedule-blocks'] });
+      toast.success('Horario desbloqueado');
+      setBlockToDelete(null);
+    },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+
   const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
-  const sorted = useMemo(
-    () => [...appts].sort((a, b) => new Date(a.startTime) - new Date(b.startTime)),
-    [appts]
-  );
+  // Combina citas y bloqueos cronológicamente para una vista completa
+  const timelineItems = useMemo(() => {
+    const formattedAppts = appts.map((a) => ({ ...a, itemType: 'appointment' }));
+    const formattedBlocks = dayBlocks.map((b) => ({ ...b, itemType: 'block' }));
+    return [...formattedAppts, ...formattedBlocks].sort(
+      (a, b) => new Date(a.startTime) - new Date(b.startTime)
+    );
+  }, [appts, dayBlocks]);
+
+  const isLoading = loadingAppts || loadingBlocks;
 
   return (
     <div>
-      <PageHeader title="Agenda" subtitle="Gestiona las reservas del día">
-        <Button onClick={() => setBooking(true)}>
-          <Plus className="h-4 w-4" /> Nueva reserva
-        </Button>
+      <PageHeader title="Agenda" subtitle="Gestiona las reservas y bloqueos del día">
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setBlocking(true)}>
+            <Ban className="h-4 w-4" /> Bloquear horario
+          </Button>
+          <Button onClick={() => setBooking(true)}>
+            <Plus className="h-4 w-4" /> Nueva reserva
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Controles */}
@@ -118,9 +162,74 @@ export default function Agenda() {
 
       {isLoading ? (
         <PageLoader />
-      ) : sorted.length ? (
+      ) : timelineItems.length ? (
         <div className="space-y-3">
-          {sorted.map((a) => {
+          {timelineItems.map((item) => {
+            // Renderizado de BLOQUEO DE HORARIO
+            if (item.itemType === 'block') {
+              return (
+                <Card
+                  key={`block-${item.id}`}
+                  className="flex flex-col gap-3 border-amber-200 bg-amber-50/40 p-4 sm:flex-row sm:items-center dark:border-amber-900/50 dark:bg-amber-950/20"
+                >
+                  <div className="flex items-center gap-3 sm:w-28">
+                    <div className="flex flex-col items-center rounded-xl bg-amber-100 px-3 py-2 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                      <Ban className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <span className="mt-1 text-sm font-bold">
+                        {item.isAllDay ? 'Día' : fTime(item.startTime)}
+                      </span>
+                      <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80">
+                        {item.isAllDay ? 'Completo' : fTime(item.endTime)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-200/70 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200">
+                      <Ban className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-semibold text-slate-800 dark:text-slate-100">
+                          Horario bloqueado: {item.title}
+                        </p>
+                        <Badge tone="amber">Bloqueado</Badge>
+                      </div>
+                      <p className="truncate text-xs text-slate-500">
+                        {item.barber ? (
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                            Barbero: {item.barber.name}
+                          </span>
+                        ) : item.branch ? (
+                          <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300">
+                            <Building2 className="h-3 w-3" /> Sucursal: {item.branch.name}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300">
+                            <Globe className="h-3 w-3" /> Toda la barbería
+                          </span>
+                        )}
+                        {item.reason && ` · ${item.reason}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 sm:w-auto">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      onClick={() => setBlockToDelete(item)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Desbloquear
+                    </Button>
+                  </div>
+                </Card>
+              );
+            }
+
+            // Renderizado de CITA REGULAR
+            const a = item;
             const st = APPOINTMENT_STATUS[a.status];
             const closed = ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(a.status);
             return (
@@ -179,12 +288,22 @@ export default function Agenda() {
       ) : (
         <EmptyState
           icon={CalendarDays}
-          title="Sin citas para este día"
-          description="Crea una nueva reserva para empezar."
-          action={<Button onClick={() => setBooking(true)}><Plus className="h-4 w-4" /> Nueva reserva</Button>}
+          title="Sin citas ni bloqueos para este día"
+          description="Crea una nueva reserva o bloquea horarios para este día."
+          action={
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setBlocking(true)}>
+                <Ban className="h-4 w-4" /> Bloquear horario
+              </Button>
+              <Button onClick={() => setBooking(true)}>
+                <Plus className="h-4 w-4" /> Nueva reserva
+              </Button>
+            </div>
+          }
         />
       )}
 
+      {/* Modal de Reserva */}
       <BookingModal
         open={booking}
         onClose={() => setBooking(false)}
@@ -192,6 +311,29 @@ export default function Agenda() {
         branches={branches}
         barbers={barbers}
       />
+
+      {/* Modal de Bloqueo rápido desde la Agenda */}
+      <BlockModal
+        open={blocking}
+        onClose={() => setBlocking(false)}
+        branches={branches}
+        barbers={barbers}
+        defaultDate={date}
+        defaultBranchId={branchId}
+        defaultBarberId={barberId}
+      />
+
+      {/* Diálogo de Confirmación para Desbloquear */}
+      <ConfirmDialog
+        open={!!blockToDelete}
+        onClose={() => setBlockToDelete(null)}
+        onConfirm={() => deleteBlockMutation.mutate(blockToDelete.id)}
+        loading={deleteBlockMutation.isPending}
+        title="Desbloquear horario"
+        description={`¿Deseas eliminar el bloqueo "${blockToDelete?.title}" de la agenda?`}
+        confirmText="Desbloquear"
+      />
     </div>
   );
 }
+

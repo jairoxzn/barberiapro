@@ -79,6 +79,31 @@ const assertAvailability = async ({
   );
   if (onTimeOff) throw ApiError.badRequest('El barbero está de vacaciones/día libre');
 
+  // 3.1) Bloqueos de horario (almuerzos, reuniones, feriados, etc.)
+  const clashBlock = await prisma.scheduleBlock.findFirst({
+    where: {
+      tenantId,
+      AND: [
+        {
+          OR: [
+            { barberId },
+            { branchId, barberId: null },
+            { branchId: null, barberId: null },
+          ],
+        },
+        {
+          startTime: { lt: endTime },
+          endTime: { gt: startTime },
+        },
+      ],
+    },
+  });
+  if (clashBlock) {
+    throw ApiError.conflict(
+      `El horario está bloqueado: ${clashBlock.title}${clashBlock.reason ? ` (${clashBlock.reason})` : ''}`
+    );
+  }
+
   // 4) Solapes con otras citas del mismo barbero.
   const sameDayStart = new Date(startTime);
   sameDayStart.setHours(0, 0, 0, 0);

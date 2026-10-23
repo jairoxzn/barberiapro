@@ -56,19 +56,56 @@ export const bookingService = {
     if (!services.length) throw ApiError.badRequest('Selecciona al menos un servicio');
     const duration = services.reduce((a, s) => a + s.durationMinutes, 0);
 
+    // Carga configuración de reservas del tenant
+    const settings = await prisma.tenantSettings.findUnique({
+      where: { tenantId },
+    });
+    const slotStep = settings?.slotIntervalMinutes || 15;
+    const minAdvanceHours = settings?.minAdvanceHours ?? 1;
+    const maxAdvanceDays = settings?.maxAdvanceDays ?? 30;
+    const bufferMinutes = settings?.bufferMinutes ?? 0;
+
     // Día de la semana de la fecha solicitada (hora local).
     const [y, m, d] = date.split('-').map(Number);
+    const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0);
+    const dayEnd = new Date(y, m - 1, d, 23, 59, 59, 999);
+
+    // No permitir reservar más allá del límite configurado de días a futuro
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + maxAdvanceDays);
+    maxDate.setHours(23, 59, 59, 999);
+    if (dayStart > maxDate) return { date, duration, slots: [] };
+
     const weekday = new Date(y, m - 1, d).getDay();
     const schedule = barber.schedules.find((s) => s.weekday === weekday && s.isActive);
     if (!schedule) return { date, duration, slots: [] };
 
     // ¿La fecha cae en vacaciones/día libre?
-    const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0);
-    const dayEnd = new Date(y, m - 1, d, 23, 59, 59, 999);
     const onTimeOff = barber.timeOffs.some(
       (t) => dayStart <= t.endDate && dayEnd >= t.startDate
     );
     if (onTimeOff) return { date, duration, slots: [] };
+
+    // Bloqueos de horarios aplicables (para el barbero, la sucursal o toda la barbería)
+    const blocks = await prisma.scheduleBlock.findMany({
+      where: {
+        tenantId,
+        AND: [
+          {
+            OR: [
+              { barberId },
+              { branchId: barber.branchId || undefined, barberId: null },
+              { branchId: null, barberId: null },
+            ],
+          },
+          {
+            startTime: { lte: dayEnd },
+            endTime: { gte: dayStart },
+          },
+        ],
+      },
+      select: { startTime: true, endTime: true, title: true },
+    });
 
     // Citas que ocupan la agenda ese día.
     const existing = await prisma.appointment.findMany({
@@ -82,19 +119,34 @@ export const bookingService = {
 
     const schedStart = hhmmToMinutes(schedule.startTime);
     const schedEnd = hhmmToMinutes(schedule.endTime);
-    const now = Date.now();
+    const earliestAllowed = Date.now() + minAdvanceHours * 3600_000;
 
     const slots = [];
-    for (let start = schedStart; start + duration <= schedEnd; start += SLOT_STEP) {
+    for (let start = schedStart; start + duration <= schedEnd; start += slotStep) {
       const startMs = dateAtMinutes(date, start);
       const endMs = startMs + duration * 60_000;
 
-      if (startMs < now) continue; // no ofrecer horas pasadas
+      if (startMs < earliestAllowed) continue; // no ofrecer horas antes del mínimo de anticipación
 
-      const clash = existing.some((a) =>
-        overlaps(new Date(startMs), new Date(endMs), a.startTime, a.endTime)
+      const slotStart = new Date(startMs);
+      const slotEnd = new Date(endMs);
+
+      // Solape con citas (considerando buffer)
+      const clashAppt = existing.some((a) =>
+        overlaps(
+          slotStart,
+          slotEnd,
+          a.startTime,
+          bufferMinutes > 0 ? addMinutes(a.endTime, bufferMinutes) : a.endTime
+        )
       );
-      if (clash) continue;
+      if (clashAppt) continue;
+
+      // Solape con bloqueos de horario
+      const clashBlock = blocks.some((b) =>
+        overlaps(slotStart, slotEnd, b.startTime, b.endTime)
+      );
+      if (clashBlock) continue;
 
       const hh = String(Math.floor(start / 60)).padStart(2, '0');
       const mm = String(start % 60).padStart(2, '0');
@@ -143,6 +195,17 @@ export const bookingService = {
     if (appt.startTime < new Date()) {
       throw ApiError.badRequest('No puedes cancelar una cita pasada');
     }
+
+    // Validar anticipación mínima para cancelar
+    const settings = await prisma.tenantSettings.findUnique({ where: { tenantId } });
+    const cancelAdvanceHours = settings?.cancelAdvanceHours ?? 2;
+    const minCancelTime = new Date(Date.now() + cancelAdvanceHours * 3600_000);
+    if (appt.startTime < minCancelTime) {
+      throw ApiError.badRequest(
+        `Solo puedes cancelar citas con al menos ${cancelAdvanceHours} hora(s) de anticipación`
+      );
+    }
+
     return prisma.appointment.update({
       where: { id: appointmentId },
       data: { status: 'CANCELLED' },

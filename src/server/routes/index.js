@@ -13,13 +13,14 @@ import publicRoutes from './public.routes.js';
 import bookingRoutes from './booking.routes.js';
 import settingsRoutes from './settings.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
+import scheduleRoutes from './schedule.routes.js';
 
 export const apiRouter = Router();
 
 apiRouter.get('/', (_req, res) =>
   res.json({
     name: 'BarberiaPro API',
-    version: '1.1.0',
+    version: '1.2.0',
     modules: [
       'auth',
       'branches',
@@ -35,6 +36,7 @@ apiRouter.get('/', (_req, res) =>
       'booking',
       'settings',
       'dashboard',
+      'schedule',
     ],
   })
 );
@@ -53,3 +55,5 @@ apiRouter.use('/public', publicRoutes);
 apiRouter.use('/booking', bookingRoutes);
 apiRouter.use('/settings', settingsRoutes);
 apiRouter.use('/dashboard', dashboardRoutes);
+apiRouter.use('/schedule', scheduleRoutes);
+

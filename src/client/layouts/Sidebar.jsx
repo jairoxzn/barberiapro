@@ -12,6 +12,7 @@ import {
   Share2,
   Building2,
   Settings,
+  CalendarClock,
   X,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -19,6 +20,7 @@ import { cn } from '@/utils/cn';
 const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/agenda', label: 'Agenda', icon: Calendar },
+  { to: '/horarios', label: 'Horarios y Bloqueos', icon: CalendarClock, roles: ['ADMIN', 'RECEPTIONIST'] },
   { to: '/pos', label: 'Punto de venta', icon: ShoppingCart },
   { to: '/caja', label: 'Caja', icon: Wallet },
   { to: '/clientes', label: 'Clientes', icon: Users },

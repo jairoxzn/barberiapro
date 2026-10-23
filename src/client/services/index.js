@@ -152,3 +152,16 @@ export const appointmentApi = {
     unwrap(api.patch(`/appointments/${id}/status`, { status })),
   remove: (id) => unwrap(api.delete(`/appointments/${id}`)),
 };
+
+// ---- Horarios y Bloqueos ----
+export const scheduleApi = {
+  getOverview: (params) => unwrap(api.get('/schedule/overview', { params })),
+  getSettings: () => unwrap(api.get('/schedule/settings')),
+  updateSettings: (data) => unwrap(api.put('/schedule/settings', data)),
+  listBlocks: (params) => unwrap(api.get('/schedule/blocks', { params })),
+  getBlock: (id) => unwrap(api.get(`/schedule/blocks/${id}`)),
+  createBlock: (data) => unwrap(api.post('/schedule/blocks', data)),
+  updateBlock: (id, data) => unwrap(api.put(`/schedule/blocks/${id}`, data)),
+  deleteBlock: (id) => unwrap(api.delete(`/schedule/blocks/${id}`)),
+};
+

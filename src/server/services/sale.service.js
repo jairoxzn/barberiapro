@@ -112,10 +112,15 @@ export const saleService = {
       }
       const code = `${series}-${String(nextCounter).padStart(6, '0')}`;
 
-      // --- 5. Caja abierta de la sucursal (si existe) ---
+      // --- 5. Caja abierta de la sucursal (obligatoria para vender) ---
       const cashSession = await tx.cashSession.findFirst({
         where: { branchId, status: 'OPEN' },
       });
+      if (!cashSession) {
+        throw ApiError.badRequest(
+          'Debes abrir la caja de esta sucursal antes de registrar ventas'
+        );
+      }
 
       // --- 6. Validar cliente y cita ---
       if (clientId) {

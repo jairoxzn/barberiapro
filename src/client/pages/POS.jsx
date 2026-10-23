@@ -12,9 +12,11 @@ import {
   X,
   Printer,
   CheckCircle2,
+  Wallet,
   UserPlus,
 } from 'lucide-react';
-import { serviceApi, productApi, clientApi, saleApi } from '@/services';
+import { Link } from 'react-router-dom';
+import { serviceApi, productApi, clientApi, saleApi, cashApi } from '@/services';
 import { api, errMsg } from '@/lib/axios';
 import { useAuthStore } from '@/store/authStore';
 import { useDebounced } from '@/hooks/useDebounced';
@@ -69,6 +71,14 @@ export default function POS() {
     queryKey: ['pos-clients'],
     queryFn: () => clientApi.list({ limit: 100 }),
   });
+  // Caja abierta de la sucursal: es obligatoria para poder vender.
+  const { data: cashSession } = useQuery({
+    queryKey: ['cash-current', branchId],
+    queryFn: () => cashApi.current(branchId).then((r) => r.data),
+    enabled: !!branchId,
+    refetchInterval: 20_000,
+  });
+  const cashOpen = !!cashSession;
 
   const items = tab === 'services' ? services?.data || [] : products?.data || [];
 

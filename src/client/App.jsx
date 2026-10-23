@@ -18,6 +18,7 @@ import Reports from '@/pages/Reports';
 import Branches from '@/pages/Branches';
 import Settings from '@/pages/Settings';
 import ShareBooking from '@/pages/ShareBooking';
+import ScheduleManagement from '@/pages/ScheduleManagement';
 import BookingPortal from '@/pages/booking/BookingPortal';
 import NotFound from '@/pages/NotFound';
 
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/productos" element={<Products />} />
           <Route path="/barberos" element={<Barbers />} />
           <Route element={<ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']} />}>
+            <Route path="/horarios" element={<ScheduleManagement />} />
             <Route path="/reportes" element={<Reports />} />
             <Route path="/reservas-online" element={<ShareBooking />} />
           </Route>

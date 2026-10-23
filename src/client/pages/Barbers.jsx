@@ -75,67 +75,7 @@ function BarberForm({ open, onClose, editing, branches }) {
   );
 }
 
-function ScheduleModal({ open, onClose, barber }) {
-  const qc = useQueryClient();
-  const [rows, setRows] = useState(() =>
-    WEEKDAYS.map((_, weekday) => {
-      const existing = barber?.schedules?.find((s) => s.weekday === weekday);
-      return {
-        weekday,
-        active: !!existing,
-        startTime: existing?.startTime || '09:00',
-        endTime: existing?.endTime || '19:00',
-      };
-    })
-  );
-
-  const save = useMutation({
-    mutationFn: () =>
-      barberApi.setSchedule(
-        barber.id,
-        rows
-          .filter((r) => r.active)
-          .map((r) => ({ weekday: r.weekday, startTime: r.startTime, endTime: r.endTime, isActive: true }))
-      ),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['barbers'] });
-      toast.success('Horario actualizado');
-      onClose();
-    },
-    onError: (e) => toast.error(errMsg(e)),
-  });
-
-  const update = (i, patch) =>
-    setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={`Horario de ${barber?.name || ''}`}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => save.mutate()} loading={save.isPending}>Guardar horario</Button>
-        </>
-      }
-    >
-      <div className="space-y-2">
-        {rows.map((r, i) => (
-          <div key={r.weekday} className="flex items-center gap-3 rounded-xl border border-slate-100 p-2.5 dark:border-slate-800">
-            <label className="flex w-20 items-center gap-2">
-              <input type="checkbox" checked={r.active} onChange={(e) => update(i, { active: e.target.checked })} className="h-4 w-4 rounded accent-brand-600" />
-              <span className="text-sm font-medium">{WEEKDAYS[r.weekday]}</span>
-            </label>
-            <input type="time" value={r.startTime} disabled={!r.active} onChange={(e) => update(i, { startTime: e.target.value })} className="input h-9 flex-1 disabled:opacity-40" />
-            <span className="text-slate-400">—</span>
-            <input type="time" value={r.endTime} disabled={!r.active} onChange={(e) => update(i, { endTime: e.target.value })} className="input h-9 flex-1 disabled:opacity-40" />
-          </div>
-        ))}
-      </div>
-    </Modal>
-  );
-}
+import { ScheduleModal } from '@/components/ScheduleModal';
 
 export default function Barbers() {
   const qc = useQueryClient();

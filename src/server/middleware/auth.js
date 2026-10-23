@@ -25,12 +25,24 @@ export const authenticate = (req, _res, next) => {
 // Restringe por rol. Uso: authorize('ADMIN', 'RECEPTIONIST')
 export const authorize = (...roles) => (req, _res, next) => {
   if (!req.user) return next(ApiError.unauthorized());
+  // SUPER_ADMIN tiene acceso universal a funciones administrativas
+  if (req.user.role === 'SUPER_ADMIN') return next();
   if (roles.length && !roles.includes(req.user.role)) {
     return next(ApiError.forbidden('No tienes permiso para esta acción'));
   }
   next();
 };
 
+// Exclusivo para el dueño de la plataforma SaaS (SUPER_ADMIN)
+export const superAdminOnly = (req, _res, next) => {
+  if (!req.user) return next(ApiError.unauthorized());
+  if (req.user.role !== 'SUPER_ADMIN') {
+    return next(ApiError.forbidden('Requiere permisos de Super Administrador del SaaS'));
+  }
+  next();
+};
+
 // Bloquea a las cuentas de cliente (rol CLIENT) del panel administrativo.
 // Los clientes sólo operan a través de /api/booking y /api/public.
-export const staffOnly = authorize('ADMIN', 'RECEPTIONIST', 'BARBER');
+export const staffOnly = authorize('SUPER_ADMIN', 'ADMIN', 'RECEPTIONIST', 'BARBER');
+

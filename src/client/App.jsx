@@ -19,6 +19,7 @@ import Branches from '@/pages/Branches';
 import Settings from '@/pages/Settings';
 import ShareBooking from '@/pages/ShareBooking';
 import ScheduleManagement from '@/pages/ScheduleManagement';
+import SuperAdmin from '@/pages/SuperAdmin';
 import BookingPortal from '@/pages/booking/BookingPortal';
 import NotFound from '@/pages/NotFound';
 
@@ -49,6 +50,11 @@ export default function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
+          {/* Panel SaaS Master (Supervisión global de barberías) */}
+          <Route element={<ProtectedRoute roles={['SUPER_ADMIN']} />}>
+            <Route path="/superadmin" element={<SuperAdmin />} />
+          </Route>
+
           <Route path="/" element={<Dashboard />} />
           <Route path="/agenda" element={<Agenda />} />
           <Route path="/pos" element={<POS />} />
@@ -74,3 +80,4 @@ export default function App() {
     </Routes>
   );
 }
+

@@ -10,6 +10,9 @@ export const money = (value, currency = 'PEN') =>
     minimumFractionDigits: 2,
   }).format(Number(value || 0));
 
+export const formatCurrency = money;
+
+
 export const fDate = (d, pattern = "dd MMM yyyy") =>
   d ? format(toDate(d), pattern, { locale: es }) : '—';
 

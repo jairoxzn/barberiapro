@@ -165,3 +165,14 @@ export const scheduleApi = {
   deleteBlock: (id) => unwrap(api.delete(`/schedule/blocks/${id}`)),
 };
 
+// ---- Super Admin (Gestión SaaS Global) ----
+export const superadminApi = {
+  metrics: () => unwrap(api.get('/superadmin/metrics')),
+  listTenants: (params) => unwrap(api.get('/superadmin/tenants', { params })),
+  getTenant: (id) => unwrap(api.get(`/superadmin/tenants/${id}`)),
+  createTenant: (data) => unwrap(api.post('/superadmin/tenants', data)),
+  toggleStatus: (id, isActive) => unwrap(api.patch(`/superadmin/tenants/${id}/status`, { isActive })),
+  impersonate: (id) => unwrap(api.post(`/superadmin/tenants/${id}/impersonate`)),
+};
+
+

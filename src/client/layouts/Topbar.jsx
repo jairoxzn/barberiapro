@@ -7,11 +7,13 @@ import { Avatar } from '@/components/ui/Misc';
 import { cn } from '@/utils/cn';
 
 const ROLE_LABEL = {
+  SUPER_ADMIN: 'Super Administrador (SaaS)',
   ADMIN: 'Administrador',
   RECEPTIONIST: 'Recepcionista',
   BARBER: 'Barbero',
   CLIENT: 'Cliente',
 };
+
 
 export function Topbar({ onMenu }) {
   const { theme, toggle } = useThemeStore();

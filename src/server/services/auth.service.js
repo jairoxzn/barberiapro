@@ -110,8 +110,13 @@ export const authService = {
     // Login de staff: excluye cuentas de cliente (esas entran por el portal).
     const user = await prisma.user.findFirst({
       where: { email, isActive: true, role: { not: 'CLIENT' } },
+      include: { tenant: true },
     });
     if (!user) throw ApiError.unauthorized('Credenciales inválidas');
+
+    if (user.tenant && !user.tenant.isActive && user.role !== 'SUPER_ADMIN') {
+      throw ApiError.forbidden('Esta barbería se encuentra suspendida temporalmente. Comunícate con soporte.');
+    }
 
     const valid = await comparePassword(password, user.passwordHash);
     if (!valid) throw ApiError.unauthorized('Credenciales inválidas');

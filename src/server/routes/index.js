@@ -14,6 +14,7 @@ import bookingRoutes from './booking.routes.js';
 import settingsRoutes from './settings.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import scheduleRoutes from './schedule.routes.js';
+import superadminRoutes from './superadmin.routes.js';
 
 export const apiRouter = Router();
 
@@ -37,6 +38,7 @@ apiRouter.get('/', (_req, res) =>
       'settings',
       'dashboard',
       'schedule',
+      'superadmin',
     ],
   })
 );
@@ -56,4 +58,6 @@ apiRouter.use('/booking', bookingRoutes);
 apiRouter.use('/settings', settingsRoutes);
 apiRouter.use('/dashboard', dashboardRoutes);
 apiRouter.use('/schedule', scheduleRoutes);
+apiRouter.use('/superadmin', superadminRoutes);
+
 

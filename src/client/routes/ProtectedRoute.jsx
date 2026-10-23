@@ -22,8 +22,11 @@ export function ProtectedRoute({ roles }) {
   }
 
   if (roles && user && !roles.includes(user.role)) {
+    // El SUPER_ADMIN tiene acceso global a todas las rutas
+    if (user.role === 'SUPER_ADMIN') return <Outlet />;
     return <Navigate to="/" replace />;
   }
+
 
   return <Outlet />;
 }

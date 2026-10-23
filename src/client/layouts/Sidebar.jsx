@@ -1,4 +1,3 @@
-import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Calendar,
@@ -13,6 +12,7 @@ import {
   Building2,
   Settings,
   CalendarClock,
+  ShieldCheck,
   X,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -34,6 +34,8 @@ const nav = [
 ];
 
 export function Sidebar({ open, onClose, role }) {
+  const isSuperAdmin = role === 'SUPER_ADMIN';
+
   return (
     <>
       {/* Overlay móvil */}
@@ -70,8 +72,35 @@ export function Sidebar({ open, onClose, role }) {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+          {/* Acceso destacado al Panel SaaS Master para SUPER_ADMIN */}
+          {isSuperAdmin && (
+            <div className="mb-3 px-1">
+              <NavLink
+                to="/superadmin"
+                onClick={onClose}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-bold shadow-sm transition',
+                    isActive
+                      ? 'bg-amber-500 text-slate-950 shadow-amber-500/20'
+                      : 'border border-amber-500/30 bg-amber-50/70 text-amber-900 hover:bg-amber-100 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20'
+                  )
+                }
+              >
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <span>Panel SaaS Master</span>
+                </div>
+                <span className="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-amber-900 dark:bg-amber-400/20 dark:text-amber-300">
+                  PLATAFORMA
+                </span>
+              </NavLink>
+              <div className="my-2.5 border-t border-slate-200 dark:border-slate-800" />
+            </div>
+          )}
+
           {nav
-            .filter((item) => !item.roles || item.roles.includes(role))
+            .filter((item) => !item.roles || item.roles.includes(role) || isSuperAdmin)
             .map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
@@ -92,6 +121,7 @@ export function Sidebar({ open, onClose, role }) {
               </NavLink>
             ))}
         </nav>
+
 
         <div className="border-t border-slate-100 p-4 dark:border-slate-800">
           <div className="rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 p-4 text-white">
